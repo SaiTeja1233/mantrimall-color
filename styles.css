@@ -1,0 +1,126 @@
+body {
+    background-color: #000000;
+    font-family: Arial, sans-serif;
+    text-align: center;
+    color: white;
+    margin: 0;
+    padding: 0;
+}
+.container {
+    width: 90%;
+    max-width: 500px;
+    margin: auto;
+    margin-top: 20px;
+    padding: 15px;
+}
+.enter-inputs {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5%;
+}
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: #4c4b50;
+    border-radius: 10px;
+    overflow: hidden;
+}
+th,
+td {
+    padding: 12px;
+    text-align: center;
+    border-bottom: 1px solid #463c92;
+}
+th {
+    background-color: #171717;
+    font-weight: bold;
+}
+.big .small .even {
+    color: red;
+    font-weight: bold;
+}
+
+.even {
+    color: red !important;
+    font-weight: bold;
+}
+.odd {
+    color: green;
+    font-weight: bold;
+}
+
+.input-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+.input-container input::placeholder {
+    color: rgb(179, 179, 179);
+    opacity: 1; /* Ensures full visibility */
+}
+#numberInput {
+    width: 100px;
+}
+
+input,
+button {
+    padding: 12px;
+    font-size: 16px;
+    border: none;
+    border-radius: 5px;
+    outline: none;
+    transition: 0.3s ease-in-out;
+}
+input {
+    background: #6d6c77;
+    color: white;
+    text-align: center;
+}
+button {
+    background: #a29733;
+    color: white;
+    cursor: pointer;
+    font-weight: bold;
+}
+button:hover {
+    background: #cc9940;
+}
+#predictionResult {
+    font-size: 22px;
+    margin-top: 10px;
+    padding: 10px;
+    font-weight: bold;
+    border-radius: 5px;
+    display: inline-block;
+    transition: all 0.3s ease-in-out;
+}
+.big-result {
+    background: #00ff00;
+    color: black;
+}
+.small-result {
+    background: red;
+    color: white;
+}
+.loading {
+    font-size: 18px;
+    margin-top: 10px;
+    animation: blink 1s infinite;
+}
+@keyframes blink {
+    50% {
+        opacity: 0.5;
+    }
+}
+@media (max-width: 500px) {
+    input,
+    button {
+        font-size: 14px;
+        padding: 10px;
+    }
+    #predictionResult {
+        font-size: 18px;
+    }
+}
