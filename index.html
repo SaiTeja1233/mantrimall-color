@@ -109,6 +109,41 @@
             #error {
                 color: red;
             }
+            .number-prediction {
+                height: 20vh;
+                width: 80%;
+                margin: 20px auto;
+                padding: 15px;
+                background: #ffffff;
+                border: 2px solid #007bff;
+                border-radius: 10px;
+                box-shadow: 0 2px 8px rgba(0, 123, 255, 0.2);
+                text-align: center;
+                font-size: 14px;
+                color: #333;
+                display: flex;
+                justify-content: center;
+                flex-wrap: nowrap;
+                gap: 10px;
+                overflow-x: auto;
+            }
+
+            .column {
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .circle {
+                width: 15px;
+                height: 15px;
+                border-radius: 50%;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                color: white;
+                font-weight: bold;
+            }
 
             @media (max-width: 768px) {
                 input,
@@ -170,6 +205,16 @@
                 placeholder="Enter last 3 digits of period number"
             />
             <input type="text" id="numberInput" placeholder="Enter number" />
+            <div
+                class="number-prediction"
+                style="
+                    width: 80%;
+                    display: flex;
+                    justify-content: center;
+                    flex-wrap: nowrap;
+                    overflow-x: auto;
+                "
+            ></div>
 
             <table id="dataTable">
                 <thead>
@@ -182,267 +227,6 @@
                 <tbody></tbody>
             </table>
         </div>
-
-        <!-- <script>
-            document.getElementById("login").style.display = "block";
-            let periodNumber = null;
-            let entryCount = 0;
-            let allData = [];
-
-            function checkKey() {
-                const key = document.getElementById("keyInput").value;
-                if (key === "152535") {
-                    document.getElementById("login").style.display = "none";
-                    document.getElementById("app").style.display = "block";
-                } else {
-                    document.getElementById("error").textContent =
-                        "Invalid key. Try again.";
-                }
-            }
-
-            document.addEventListener("keydown", function (event) {
-                if (event.key === "Enter") {
-                    submitData();
-                }
-            });
-
-            function submitData() {
-                const period = document
-                    .getElementById("periodInput")
-                    .value.trim();
-                const number = document
-                    .getElementById("numberInput")
-                    .value.trim();
-
-                if (
-                    (period.length === 3 || periodNumber !== null) &&
-                    number !== "" &&
-                    !isNaN(number)
-                ) {
-                    if (periodNumber === null) {
-                        periodNumber = period.padStart(3, "0");
-                        document.getElementById("periodInput").style.display =
-                            "none";
-                    } else {
-                        periodNumber = (parseInt(periodNumber) + 1)
-                            .toString()
-                            .padStart(3, "0");
-                    }
-
-                    let color = "";
-                    let numberColor = "";
-
-                    if (parseInt(number) === 0) {
-                        color = "🔴🟣";
-                        numberColor = "red";
-                    } else if (parseInt(number) === 5) {
-                        color = "🟢🟣";
-                        numberColor = "green";
-                    } else if (parseInt(number) % 2 === 0) {
-                        color = "🔴";
-                        numberColor = "red";
-                    } else {
-                        color = "🟢";
-                        numberColor = "green";
-                    }
-
-                    const table = document
-                        .getElementById("dataTable")
-                        .getElementsByTagName("tbody")[0];
-                    const newRow = table.insertRow(0);
-
-                    const periodCell = newRow.insertCell(0);
-                    const numberCell = newRow.insertCell(1);
-                    const colorCell = newRow.insertCell(2);
-
-                    periodCell.textContent = periodNumber;
-                    numberCell.textContent = number;
-                    numberCell.style.color = numberColor;
-                    colorCell.textContent = color;
-
-                    entryCount++;
-                    allData.unshift({ period: periodNumber, number: number });
-
-                    if (entryCount > 20) {
-                        table.deleteRow(-1);
-                        allData.pop();
-                    }
-
-                    document.getElementById("numberInput").value = "";
-                    document.getElementById("numberInput").focus();
-
-                    if (entryCount >= 20) {
-                        document.getElementById("infoText").style.display =
-                            "none";
-                    }
-
-                    predictNext(allData);
-                } else {
-                    alert(
-                        "Please enter valid 3-digit period number and number."
-                    );
-                }
-            }
-            function predictNext(data) {
-                if (!data.length) {
-                    document.getElementById("prediction-box").innerHTML =
-                        "<h2>🔮 Prediction</h2><p>No data to predict.</p>";
-                    return;
-                }
-
-                // Map numbers to colors
-                const colors = data
-                    .map((item) => {
-                        const num = parseInt(item.number);
-                        if (isNaN(num)) return null;
-                        if (num === 0 || num === 5) return "purple";
-                        return num % 2 === 0 ? "red" : "green";
-                    })
-                    .filter(Boolean);
-
-                // Only last 8 colors needed for pattern detection
-                const recent = colors.slice(-8);
-                const sequence = recent
-                    .map((color) => {
-                        if (color === "red") return "A";
-                        if (color === "green") return "B";
-                        return "P"; // Purple special case
-                    })
-                    .join("");
-
-                let prediction = "Unknown";
-                let reason = "";
-
-                // Pattern matching rules
-                if (sequence.endsWith("ABAB")) {
-                    prediction = "red";
-                    reason = "Pattern ABAB detected";
-                } else if (sequence.endsWith("BABA")) {
-                    prediction = "green";
-                    reason = "Pattern BABA detected";
-                } else if (
-                    sequence.endsWith("ABB") ||
-                    sequence.endsWith("ABB")
-                ) {
-                    prediction = "red";
-                    reason = "Pattern ABB detected";
-                } else if (
-                    sequence.endsWith("BAA") ||
-                    sequence.endsWith("BAA")
-                ) {
-                    prediction = "green";
-                    reason = "Pattern BAA detected";
-                }
-                // Dragon trend detection
-                else if (recent.every((c) => c === "red")) {
-                    prediction = "red";
-                    reason = "Red Dragon trend detected";
-                } else if (recent.every((c) => c === "green")) {
-                    prediction = "green";
-                    reason = "Green Dragon trend detected";
-                }
-                // Mirror detection (reverse patterns)
-                else if (sequence.endsWith("AABB")) {
-                    prediction = "red";
-                    reason = "Mirror pattern AABB detected";
-                } else if (sequence.endsWith("BBAA")) {
-                    prediction = "green";
-                    reason = "Mirror pattern BBAA detected";
-                } else {
-                    // Fallback basic prediction: alternate last color
-                    const lastColor = colors[colors.length - 1];
-                    prediction = lastColor === "red" ? "green" : "red";
-                    reason = "Fallback alternate color prediction";
-                }
-
-                const numberMap = {
-                    green: [1, 3, 7, 9],
-                    red: [2, 4, 6, 8],
-                    purple: [0, 5],
-                };
-
-                const picks = numberMap[prediction]
-                    ? numberMap[prediction]
-                          .sort(() => 0.5 - Math.random())
-                          .slice(0, 2)
-                    : [];
-
-                let nextPeriodNumber = (parseInt(periodNumber) + 1)
-                    .toString()
-                    .padStart(3, "0");
-
-                const html = `
-      <h2>🔮 ${nextPeriodNumber} - Prediction</h2>
-      <p>Likely Color: <span class="${prediction}">
-          ${prediction.charAt(0).toUpperCase() + prediction.slice(1)}
-      </span></p>
-      <p>Related Numbers: ${picks.join(" / ")}</p>
-      <p><strong>Reason:</strong> ${reason}</p>
-    `;
-
-                document.getElementById("prediction-box").innerHTML = html;
-            }
-
-
-
-
-
-
-            
-                    function predictNext(data) {
-                        if (!data.length) {
-                            document.getElementById("prediction-box").innerHTML =
-                                "<h2>🔮 Prediction</h2><p>No data to predict.</p>";
-                            return;
-                        }
-
-                        const weightedCounts = { red: 0, green: 0, purple: 0 };
-                        const colors = data
-                            .map((item, index) => {
-                                const num = parseInt(item.number);
-                                if (isNaN(num)) return null;
-                                if (num === 0 || num === 5) return "purple";
-                                return num % 2 === 0 ? "red" : "green";
-                            })
-                            .filter(Boolean);
-
-                        colors.forEach((color, idx) => {
-                            const weight = 10 - idx;
-                            weightedCounts[color] += weight;
-                        });
-
-                        const sorted = Object.entries(weightedCounts).sort(
-                            (a, b) => b[1] - a[1]
-                        );
-                        const [predictedColor, _] = sorted[0];
-
-                        const numberMap = {
-                            green: [1, 3, 7, 9],
-                            red: [2, 4, 6, 8],
-                            purple: [0, 5],
-                        };
-
-                        const picks = numberMap[predictedColor]
-                            .sort(() => 0.5 - Math.random())
-                            .slice(0, 2);
-
-                        // Get next period number
-                        let nextPeriodNumber = (parseInt(periodNumber) + 1)
-                            .toString()
-                            .padStart(3, "0");
-
-                        const html = `
-              <h2>🔮 ${nextPeriodNumber} - Prediction</h2>
-              <p>Likely Color: <span class="${predictedColor}">
-                  ${predictedColor.charAt(0).toUpperCase() + predictedColor.slice(1)}
-              </span></p>
-              <p>Related Numbers: ${picks.join(" / ")}</p>
-            `;
-                        document.getElementById("prediction-box").innerHTML = html;
-                    }
-        </script> -->
-
-
         <script>
             document.getElementById("login").style.display = "block";
             let periodNumber = null;
@@ -466,6 +250,11 @@
                 }
             });
 
+            let predictionContainer =
+                document.querySelector(".number-prediction");
+            let numberColumns = []; // To track the columns (each column is an array of numbers)
+
+            // Modify the submitData function to handle number storage in columns
             function submitData() {
                 const period = document
                     .getElementById("periodInput")
@@ -490,6 +279,9 @@
 
                     addRow(periodNumber, number);
 
+                    // Add to the number prediction container
+                    updateNumberPredictionContainer(number);
+
                     document.getElementById("numberInput").value = "";
                     document.getElementById("numberInput").focus();
 
@@ -503,6 +295,54 @@
                     document.getElementById("numberInput").value = "";
                     document.getElementById("numberInput").focus();
                 }
+            }
+
+            // Function to handle adding to number prediction container
+            function updateNumberPredictionContainer(number) {
+                const isOdd = number % 2 !== 0;
+                const color = isOdd ? "green" : "red";
+
+                // Check if the last column's number is the same type (odd/even)
+                if (
+                    numberColumns.length > 0 &&
+                    numberColumns[numberColumns.length - 1].color === color
+                ) {
+                    // Add number to the last column if it's the same type
+                    numberColumns[numberColumns.length - 1].numbers.push(
+                        number
+                    );
+                } else {
+                    // If it's a different type, create a new column
+                    numberColumns.push({ color: color, numbers: [number] });
+                }
+
+                // Limit columns to 20
+                if (numberColumns.length > 20) {
+                    numberColumns.shift(); // Remove the first column
+                }
+
+                // Update the UI with the current columns
+                renderNumberPredictionColumns();
+            }
+
+            // Function to render the columns inside the .number-prediction container
+            function renderNumberPredictionColumns() {
+                predictionContainer.innerHTML = ""; // Clear current content
+
+                numberColumns.forEach((column) => {
+                    const columnDiv = document.createElement("div");
+                    columnDiv.classList.add("column");
+
+                    column.numbers.forEach((num) => {
+                        const numDiv = document.createElement("div");
+                        numDiv.classList.add("circle");
+                        numDiv.textContent = num;
+                        numDiv.style.backgroundColor = column.color; // Apply color (green/red)
+                        columnDiv.appendChild(numDiv);
+                    });
+
+                    predictionContainer.appendChild(columnDiv);
+                });
             }
 
             function addRow(period, number) {
