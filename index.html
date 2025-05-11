@@ -126,11 +126,17 @@
         <div id="app">
             <h1>Color App</h1>
             <input
-                type="text"
                 id="periodInput"
-                placeholder="Enter last 3 digits of period number"
+                type="text"
+                placeholder="Enter period (e.g., 001)"
             />
-            <input type="text" id="numberInput" placeholder="Enter number" />
+            <input
+                id="numberInput"
+                type="text"
+                placeholder="Enter numbers (e.g., 4578925)"
+                oninput="autoFormatInput(this)"
+            />
+            <button id="submitBtn" onclick="submitData()">Submit</button>
             <div class="color-prediction">
                 <div id="color-sequence-display"></div>
                 <div id="predicted-color-display"></div>
@@ -173,74 +179,54 @@
                 }
             });
 
+            function autoFormatInput(input) {
+                // Auto add spaces between digits (only digits allowed)
+                const formatted = input.value
+                    .replace(/\D/g, "")
+                    .split("")
+                    .join(" ");
+                input.value = formatted;
+            }
+
             function submitData() {
-                const period = document
-                    .getElementById("periodInput")
-                    .value.trim();
-                const number = document
-                    .getElementById("numberInput")
-                    .value.trim();
+                const periodInput = document.getElementById("periodInput");
+                const numberInput = document.getElementById("numberInput");
+
+                const period = periodInput.value.trim();
+                let numbers = numberInput.value.trim();
 
                 const isValidPeriod = /^\d{3}$/.test(period);
-                const isValidNumber = /^[0-9]$/.test(number);
-
-                if ((isValidPeriod || periodNumber !== null) && isValidNumber) {
-                    if (periodNumber === null) {
-                        periodNumber = period.padStart(3, "0");
-                        document.getElementById("periodInput").style.display =
-                            "none";
-                    } else {
-                        periodNumber = (parseInt(periodNumber) + 1)
-                            .toString()
-                            .padStart(3, "0");
-                    }
-
-                    addRow(periodNumber, number);
-                    updateNumberPredictionContainer(number);
-                    document.getElementById("numberInput").value = "";
-                } else {
-                    document.getElementById("numberInput").value = "";
-                }
-            }
-
-            function updateNumberPredictionContainer(number) {
-                const isOdd = number % 2 !== 0;
-                const color = isOdd ? "green" : "red";
+                const isValidNumberSet = /^[0-9,\s]+$/.test(numbers);
 
                 if (
-                    numberColumns.length > 0 &&
-                    numberColumns[numberColumns.length - 1].color === color
+                    (isValidPeriod || periodNumber !== null) &&
+                    isValidNumberSet
                 ) {
-                    numberColumns[numberColumns.length - 1].numbers.push(
-                        number
-                    );
-                } else {
-                    numberColumns.push({ color: color, numbers: [number] });
-                }
+                    numbers = numbers.replace(/[, ]+/g, " ").trim().split(" ");
 
-                if (numberColumns.length > 20) {
-                    numberColumns.shift();
-                }
+                    if (periodNumber === null) {
+                        periodNumber = period.padStart(3, "0");
+                        periodInput.style.display = "none";
+                    }
 
-                renderNumberPredictionColumns();
-            }
+                    const addedNumbers = [];
 
-            function renderNumberPredictionColumns() {
-                const container = document.querySelector(".number-prediction");
-                container.innerHTML = "";
-
-                numberColumns.forEach((column) => {
-                    const colDiv = document.createElement("div");
-                    colDiv.classList.add("column");
-                    column.numbers.forEach((num) => {
-                        const numDiv = document.createElement("div");
-                        numDiv.classList.add("circle");
-                        numDiv.textContent = num;
-                        numDiv.style.backgroundColor = column.color;
-                        colDiv.appendChild(numDiv);
+                    numbers.forEach((num) => {
+                        if (/^[0-9]$/.test(num)) {
+                            addRow(periodNumber, num);
+                            addedNumbers.push(num);
+                            periodNumber = (parseInt(periodNumber) + 1)
+                                .toString()
+                                .padStart(3, "0");
+                        }
                     });
-                    container.appendChild(colDiv);
-                });
+
+                    updateNumberPredictionContainer(addedNumbers);
+                    numberInput.value = ""; // clear number input
+                    periodInput.value = ""; // clear period input
+                } else {
+                    numberInput.value = "";
+                }
             }
 
             function addRow(period, number) {
@@ -274,10 +260,6 @@
                 numberCell.style.color = numberColor;
                 colorCell.textContent = color;
 
-                numberCell.addEventListener("click", function () {
-                    editNumber(this, colorCell);
-                });
-
                 entryCount++;
                 allData.unshift({ period, number });
 
@@ -286,7 +268,54 @@
                     allData.pop();
                 }
 
+                // optional: calculate prediction
                 calculateNextResults();
+            }
+
+            function updateNumberPredictionContainer(numbersArray) {
+                if (!Array.isArray(numbersArray)) return;
+
+                numbersArray.forEach((number) => {
+                    const lastColumn = numberColumns[numberColumns.length - 1];
+                    let colorType = "";
+
+                    if (parseInt(number) === 0) colorType = "purple";
+                    else if (parseInt(number) === 5) colorType = "green";
+                    else
+                        colorType =
+                            parseInt(number) % 2 === 0 ? "red" : "green";
+
+                    if (!lastColumn || lastColumn.color !== colorType) {
+                        numberColumns.push({
+                            color: colorType,
+                            numbers: [number],
+                        });
+                    } else {
+                        lastColumn.numbers.push(number);
+                    }
+                });
+
+                renderNumberPredictionColumns();
+            }
+
+            function renderNumberPredictionColumns() {
+                const container = document.querySelector(".number-prediction");
+                container.innerHTML = "";
+
+                numberColumns.forEach((column) => {
+                    const colDiv = document.createElement("div");
+                    colDiv.classList.add("column");
+
+                    column.numbers.forEach((num) => {
+                        const numDiv = document.createElement("div");
+                        numDiv.classList.add("circle");
+                        numDiv.textContent = num;
+                        numDiv.style.backgroundColor = column.color;
+                        colDiv.appendChild(numDiv);
+                    });
+
+                    container.appendChild(colDiv);
+                });
             }
 
             function calculateNextResults() {
@@ -382,8 +411,9 @@
                 ];
 
                 let predictedColor = "⚪";
+                let matchedByShortened = false;
 
-                // Check the color sequence against the rules
+                // Check full color sequence against the rules
                 for (let rule of colorRules) {
                     for (let start = 0; start <= rule.length - 2; start++) {
                         const slice = rule.slice(
@@ -392,30 +422,42 @@
                         );
                         if (slice.join("") === colorSequence.join("")) {
                             const nextIndex = start + colorSequence.length;
-                            if (nextIndex < rule.length) {
-                                predictedColor = rule[nextIndex];
-                            } else {
-                                // Loop continuation
-                                const loopedNextIndex = nextIndex % rule.length;
-                                predictedColor = rule[loopedNextIndex];
-                            }
+                            predictedColor = rule[nextIndex % rule.length];
                             console.log(
-                                "📌 Rule matched (continuing):",
+                                "📌 Rule matched (full sequence):",
                                 rule.join(" ")
                             );
                             break;
                         }
                     }
-                    if (predictedColor !== "⚪") break; // Exit outer loop if matched
+                    if (predictedColor !== "⚪") break;
                 }
 
-                console.log("🔮 Predicted Color:", predictedColor);
-                // Update HTML with color sequence and predicted color
-                // Update color sequence display
-                document.getElementById("color-sequence-display").innerHTML =
-                    "Color Sequence: " + colorSequence.join(" ");
+                // If not matched, retry using first 5 colors (if 5+ exist)
+                if (predictedColor === "⚪" && colorSequence.length >= 5) {
+                    const shortSequence = colorSequence.slice(0, 5);
+                    for (let rule of colorRules) {
+                        for (let start = 0; start <= rule.length - 2; start++) {
+                            const slice = rule.slice(
+                                start,
+                                start + shortSequence.length
+                            );
+                            if (slice.join("") === shortSequence.join("")) {
+                                const nextIndex = start + shortSequence.length;
+                                predictedColor = rule[nextIndex % rule.length];
+                                matchedByShortened = true;
+                                console.log(
+                                    "📌 Rule matched (shortened 5):",
+                                    rule.join(" ")
+                                );
+                                break;
+                            }
+                        }
+                        if (predictedColor !== "⚪") break;
+                    }
+                }
 
-                // Update predicted color display based on value
+                // Update predicted color display
                 const predictedDiv = document.getElementById(
                     "predicted-color-display"
                 );
@@ -423,11 +465,15 @@
                 if (predictedColor === "🔴") {
                     predictedDiv.style.backgroundColor = "red";
                     predictedDiv.style.color = "white";
-                    predictedDiv.innerHTML = "JOIN : RED";
+                    predictedDiv.innerHTML = matchedByShortened
+                        ? "NO SEQUENCE FOUND - BET LOW (RED)"
+                        : "JOIN : RED";
                 } else if (predictedColor === "🟢") {
                     predictedDiv.style.backgroundColor = "green";
                     predictedDiv.style.color = "white";
-                    predictedDiv.innerHTML = "JOIN : GREEN";
+                    predictedDiv.innerHTML = matchedByShortened
+                        ? "NO SEQUENCE FOUND - BET LOW (GREEN)"
+                        : "JOIN : GREEN";
                 } else {
                     predictedDiv.style.backgroundColor = "#ccc";
                     predictedDiv.style.color = "#000";
@@ -439,53 +485,6 @@
                     colorSequence.reverse(),
                     predictedColor
                 );
-            }
-
-            function renderPredictionResults(
-                matches,
-                colorSequence,
-                predictedColor
-            ) {
-                const predictionContainer =
-                    document.querySelector(".number-prediction");
-                let matchesTableHTML = "";
-
-                if (matches.length > 0) {
-                    matchesTableHTML = `
-                    <h3>Matches</h3>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Period</th>
-                                <th>Number</th>
-                                <th>Next Result</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${matches
-                                .map(
-                                    (match) => `
-                                <tr>
-                                    <td>${match.period}</td>
-                                    <td>${match.number}</td>
-                                    <td>${match.next}</td>
-                                </tr>`
-                                )
-                                .join("")}
-                        </tbody>
-                    </table>
-                    <h3>Color Sequence of Next Results: ${colorSequence.join(
-                        " "
-                    )}</h3>
-                `;
-                } else {
-                    matchesTableHTML = `<h3>No previous matches found for the number ${allData[49].number}.</h3>`;
-                }
-
-                predictionContainer.innerHTML = `
-                ${matchesTableHTML}
-                <h3>Predicted Next Color: ${predictedColor}</h3>
-            `;
             }
         </script>
     </body>
